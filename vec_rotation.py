@@ -30,12 +30,11 @@ def conjugate_quat(quat):
 def vector_rotation(init_vector, turn_q):
     reverse_q = conjugate_quat(turn_q) # сопряженный кватернион
     init_quat = vec_to_quat(init_vector) # представляем вектор через кватернион 
-    final_quat = quaternion_multiply(quaternion_multiply(reverse_q, init_quat), turn_q) 
-    #final_quat = quaternion_multiply(quaternion_multiply(turn_q, init_quat), reverse_q) 
+    #final_quat = quaternion_multiply(quaternion_multiply(reverse_q, init_quat), turn_q) 
+    final_quat = quaternion_multiply(quaternion_multiply(turn_q, init_quat), reverse_q) 
     final_vector = np.array([final_quat[1], final_quat[2], final_quat[3]])
     return final_vector
 
 def angle_between_vectors(vec1, vec2):
     return np.degrees(math.acos(np.dot(vec1, vec2)/ (np.linalg.norm(vec1)* np.linalg.norm(vec2)))) 
-
 

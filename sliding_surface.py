@@ -86,7 +86,7 @@ log_frames = {
     }
 
 # setup simulation parameters
-max_time = 480 # взял условоно один шаг - 1 минута
+max_time = 1000 # взял условоно один шаг - 1 минута
 time_step = 1
 
 # simulate from 0 to a max time
