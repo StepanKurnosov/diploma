@@ -10,6 +10,18 @@ from scipy.spatial.transform import Rotation
 import numpy as np
 import math
 
+sight_axis = [1, 0, 0]
+target_vector = np.array([1, 2, 3])
+current_vector = np.array([4, 5, 6])
+
+def calculate_control_moment(target_vector, current_vector):
+    axis_of_rotation = np.cross(current_vector, target_vector)
+    control_moment = - (np.cross(axis_of_rotation, target_vector)) / np.linalg.norm(target_vector)**2
+
+    return control_moment
+
+    
+
 
 # create an object and an integrator
 body_model = RigidBody()
@@ -21,8 +33,8 @@ integrator = RungeKutta4Integrator()
 # ========================================================================================
 
 # setup initial body state
-body_model.angular_velocity = np.array( [0, 0, 0] )
-body_model.orientation      = Rotation.from_quat( [ 1, 0, 0, 0 ], scalar_first = True )
+body_model.angular_velocity = np.array( [0, 0, 0] ) # угловая скорость тела
+body_model.orientation      = Rotation.from_quat( [ 1, 0, 0, 0 ], scalar_first = True ) # ориентация тела полученная из кватерниона
 
 # setup body parameters
 body_model.Inertia          = np.array( [   [1, 0, 0],
