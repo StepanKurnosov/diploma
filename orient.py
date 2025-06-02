@@ -27,16 +27,22 @@ def calculate_control_moment(w, B, target_vector, orien_quat): # рассчет 
     current_vector = np.array([1, 0, 0])
 
     # перевод магнитного поля  и целевого вектор в систему аппарата
-    B_loc = vec_rotation.vector_rotation(B, orien_quat) 
-    target_vector_loc = vec_rotation.vector_rotation(target_vector, orien_quat)
+    B_loc = vec_rotation.global2loc(B, orien_quat) 
+    target_vector_loc = vec_rotation.global2loc(target_vector, orien_quat)
 
     # расчет кватерниона поворота 
     dot = np.dot(current_vector, target_vector_loc) # изменил порядок векторов, так вроде правильнее, если мы хотим найти кватернион поворота
     cross = np.cross(current_vector, target_vector_loc) # текущего вектора к целевому
-    cross_normalized = cross / np.linalg.norm(cross)
+    norm_cross = np.linalg.norm(cross)
+    if norm_cross < 1e-6:
+        cross_normalized = np.array([0, 0, 0])  # или единичная ось
+    else:
+        cross_normalized = cross / norm_cross
+
     half_angle = math.acos(dot)/2
     q = np.array([math.cos(half_angle), cross_normalized[0] * math.sin(half_angle), cross_normalized[1]*math.sin(half_angle), cross_normalized[2]*math.sin(half_angle)])
-    q_v = q[1:3].copy()
+    q_v = q[1:4].copy()
+
 
     # расчет магнитного и механического моментов 
     magnit_moment = -k_w*(np.cross(B_loc, w)) - k_q*(np.cross(B_loc, q_v))
@@ -81,7 +87,7 @@ log_frames = {
 target_vector = make_rand_vector(3)
 sight_axis = make_rand_vector(3)
 # setup simulation parameters
-max_time = 480 # взял условоно один шаг - 1 минута
+max_time = 2000 # взял условоно один шаг - 1 минута
 time_step = 1
 
 # simulate from 0 to a max time
@@ -89,13 +95,13 @@ max_step = round( max_time / time_step )
 for step_count in range(0, max_step ):
     alpha = step_count * 2 * math.pi / 120
     B = np.array([math.sin(alpha), 0, math.cos(alpha)]) # с учетом того, что 1 шаг - 1 минута, один оборот КА сделает за 120 шагов
-    B_loc = vec_rotation.vector_rotation(B, body_model.orientation.as_quat( scalar_first= True))
+    B_loc = vec_rotation.global2loc(B, body_model.orientation.as_quat( scalar_first= True))
     # set a torque
     # torque is calculated with the goal 
     # to achieve 1 degree/second angular rate at the end of the simulation
     body_model.torque = calculate_control_moment(body_model.angular_velocity, B, target_vector, body_model.orientation.as_quat( scalar_first= True))
-    desired_torque = - body_model.angular_velocity + np.cross(current_vector, vec_rotation.vector_rotation(target_vector, body_model.orientation.as_quat( scalar_first= True)))
-
+    orient_vector = vec_rotation.loc2global(current_vector, body_model.orientation.as_quat( scalar_first= True))
+    desired_torque = - body_model.angular_velocity + np.cross(orient_vector, target_vector)
 
     # calculate a new state
     integrator.update( time_step )
@@ -115,7 +121,7 @@ for step_count in range(0, max_step ):
             "w z":                  body_model.angular_velocity[2] * 180 / math.pi,
             "w":                    scipy.linalg.norm( body_model.angular_velocity * 180 / math.pi ),
             "проекция w на B":      np.dot( body_model.angular_velocity, B_loc ) / ( scipy.linalg.norm(body_model.angular_velocity) * scipy.linalg.norm( B ) ),
-            "angle":                vec_rotation.angle_between_vectors(vec_rotation.vector_rotation(target_vector, body_model.orientation.as_quat( scalar_first= True)), current_vector),
+            "angle":                vec_rotation.angle_between_vectors(target_vector, orient_vector),
             "угол между M и B":     vec_rotation.angle_between_vectors(body_model.torque, B_loc),
             "угол между жел. M и B":vec_rotation.angle_between_vectors(desired_torque, B_loc)
         }

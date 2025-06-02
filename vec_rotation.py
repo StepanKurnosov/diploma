@@ -22,19 +22,29 @@ def vec_to_quat(vec):
     return result
 
 def conjugate_quat(quat):
-    result = np.array([quat[0], quat[1], quat[2], quat[3]])
-    result[1:] = -result[1:]
+    result = np.array([quat[0], -quat[1], -quat[2], -quat[3]])
     return result
 
 
-def vector_rotation(init_vector, turn_q):
+def loc2global(init_vector, turn_q):
+    reverse_q = conjugate_quat(turn_q) # сопряженный кватернион
+    init_quat = vec_to_quat(init_vector) # представляем вектор через кватернион  
+    final_quat = quaternion_multiply(quaternion_multiply(turn_q, init_quat), reverse_q) 
+    final_vector = np.array([final_quat[1], final_quat[2], final_quat[3]])
+    return final_vector
+
+def global2loc(init_vector, turn_q):
     reverse_q = conjugate_quat(turn_q) # сопряженный кватернион
     init_quat = vec_to_quat(init_vector) # представляем вектор через кватернион 
-    #final_quat = quaternion_multiply(quaternion_multiply(reverse_q, init_quat), turn_q) 
-    final_quat = quaternion_multiply(quaternion_multiply(turn_q, init_quat), reverse_q) 
+    final_quat = quaternion_multiply(quaternion_multiply(reverse_q, init_quat), turn_q) 
     final_vector = np.array([final_quat[1], final_quat[2], final_quat[3]])
     return final_vector
 
 def angle_between_vectors(vec1, vec2):
     return np.degrees(math.acos(np.dot(vec1, vec2)/ (np.linalg.norm(vec1)* np.linalg.norm(vec2)))) 
+
+# vec1 = np.array([1, 0, 0])
+# vec2 = np.array([0.7071, 0, 0.7071, 0])
+# print(loc2global(vec1, vec2))
+# print(global2loc(loc2global(vec1, vec2), vec2))
 
