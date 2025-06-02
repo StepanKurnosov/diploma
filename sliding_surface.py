@@ -20,7 +20,6 @@ current_vector = np.array([1, 0, 0])
 
 def calculate_control_moment(w, B, target_vector, orien_quat): # рассчет управляющего момента
 
-
     # т.к. мы все переводим в систему аппарата, то вектор, который мы направляем в системе координат аппарарта всегда константа
     current_vector = np.array([1, 0, 0])
 
@@ -31,16 +30,16 @@ def calculate_control_moment(w, B, target_vector, orien_quat): # рассчет 
     # расчет кватерниона поворота 
     dot = np.dot(current_vector, target_vector_loc) # изменил порядок векторов, так вроде правильнее, если мы хотим найти кватернион поворота
     cross = np.cross(current_vector, target_vector_loc) # текущего вектора к целевому
-    cross_normalized = cross / np.linalg.norm(cross)
+    norm_cross = np.linalg.norm(cross)
+    if norm_cross < 1e-6:
+        cross_normalized = np.array([0, 0, 0])  # или единичная ось
+    else:
+        cross_normalized = cross / norm_cross
     angle = math.acos(dot)
-    half_angle = math.acos(dot)/2
-    q = np.array([math.cos(half_angle), cross_normalized[0] * math.sin(half_angle), cross_normalized[1]*math.sin(half_angle), cross_normalized[2]*math.sin(half_angle)])
-    q_v = q[1:3].copy()
+    
 
     # расчет вектора ошибки ориентации
     e_att = cross_normalized * angle
-
-    
 
     # расчет скользящей поверхности
     s = w + lam1 * e_att
