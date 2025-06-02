@@ -11,38 +11,29 @@ import graphs
 import matplotlib
 
 
-lam1 = 0.1 
-k = 0.5  # коэффициент слайдинга (усилие затухания)
+lam1 = 0.05
+k = 0.03  # коэффициент слайдинга (усилие затухания)
 
-target_vector = vec_rotation.make_rand_vector(3)
+target_vector = np.array([1, 0, 0])
+q_target = np.array([1, 0, 0, 0])
 current_vector = np.array([1, 0, 0])
 
 
 def calculate_control_moment(w, B, target_vector, orien_quat): # рассчет управляющего момента
 
-    # т.к. мы все переводим в систему аппарата, то вектор, который мы направляем в системе координат аппарарта всегда константа
-    current_vector = np.array([1, 0, 0])
-
     # перевод магнитного поля  и целевого вектор в систему аппарата
-    B_loc = vec_rotation.global2loc(B, orien_quat) 
-    target_vector_loc = vec_rotation.global2loc(target_vector, orien_quat)
+    B_loc = vec_rotation.global2loc(B, orien_quat)
 
-    # расчет кватерниона поворота 
-    dot = np.dot(current_vector, target_vector_loc) # изменил порядок векторов, так вроде правильнее, если мы хотим найти кватернион поворота
-    cross = np.cross(current_vector, target_vector_loc) # текущего вектора к целевому
-    norm_cross = np.linalg.norm(cross)
-    if norm_cross < 1e-6:
-        cross_normalized = np.array([0, 0, 0])  # или единичная ось
-    else:
-        cross_normalized = cross / norm_cross
-    angle = math.acos(dot)
-    
+    #Вариант № 1: нелогичный, но рабочий в достаточно общем, но единичном случае
+    q = orien_quat[0] * np.array([orien_quat[1], orien_quat[2], orien_quat[3]])
 
-    # расчет вектора ошибки ориентации
-    e_att = cross_normalized * angle
+    #Вариант № 2: логичный, но нерабочий
+    # q_current_rev = vec_rotation.conjugate_quat(orien_quat)
+    # q_err = vec_rotation.quaternion_multiply(q_target, q_current_rev)
+    # q = q_err[0] * np.array([q_err[1], q_err[2], q_err[3]])
 
     # расчет скользящей поверхности
-    s = w + lam1 * e_att
+    s = w + lam1 * q
 
     # расчет магнитного и механического моментов 
     magnit_moment = - k * np.cross(B_loc, s)
@@ -121,7 +112,9 @@ for step_count in range(0, max_step ):
             "проекция w на B":      np.dot( body_model.angular_velocity, B_loc ) / ( scipy.linalg.norm(body_model.angular_velocity) * scipy.linalg.norm( B ) ),
             "angle":                vec_rotation.angle_between_vectors(vec_rotation.global2loc(target_vector, body_model.orientation.as_quat( scalar_first= True)), current_vector),
             "угол между M и B":     vec_rotation.angle_between_vectors(body_model.torque, B_loc),
-            "угол между жел. M и B":vec_rotation.angle_between_vectors(desired_torque, B_loc)
+            "угол между жел. M и B":vec_rotation.angle_between_vectors(desired_torque, B_loc),
+            "целевая орентация":    q_target,
+            "текущая ориентация":   body_model.orientation.as_quat( scalar_first= True)
         }
     )
 
@@ -191,6 +184,27 @@ graphs.display_results( log_frames, [
                 [
                     # lines
                     "угол между жел. M и B"
+                ]
+        }
+    ],
+    [
+        # subplots
+        {
+            "subplot_title":"целевая орентация",
+            "y_label": "Градусы",
+            "lines":
+                [
+                    # lines
+                    "целевая орентация"
+                ]
+        },
+        {
+            "subplot_title":   "текущая ориентация",
+            "y_label": "Градусы",
+            "lines":
+                [
+                    # lines
+                    "текущая ориентация"
                 ]
         }
     ]
