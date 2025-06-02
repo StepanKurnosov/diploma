@@ -14,9 +14,11 @@ import matplotlib
 lam1 = 0.05
 k = 0.03  # коэффициент слайдинга (усилие затухания)
 
-target_vector = np.array([1, 0, 0])
-q_target = np.array([1, 0, 0, 0])
-current_vector = np.array([1, 0, 0])
+sight_axis = np.array([1, 0, 0]) # ось спутника, которую хотим направить
+#q_target = np.array([1, 0, 0, 0]) # эксперимент с возвращением спутника в "начальное положение" 
+q_target = vec_rotation.make_rand_vector(4) # эксперимент со случайной ориентпцией
+target_vector = vec_rotation.loc2global(sight_axis, q_target)
+
 
 
 def calculate_control_moment(w, B, target_vector, orien_quat): # рассчет управляющего момента
@@ -25,9 +27,11 @@ def calculate_control_moment(w, B, target_vector, orien_quat): # рассчет 
     B_loc = vec_rotation.global2loc(B, orien_quat)
 
     #Вариант № 1: нелогичный, но рабочий в достаточно общем, но единичном случае
+    # ВСЕГДА ориентируеют объект в изначальное положение (1, 0, 0, 0)
     q = orien_quat[0] * np.array([orien_quat[1], orien_quat[2], orien_quat[3]])
 
     #Вариант № 2: логичный, но нерабочий
+    # ВСЕГДА стабилизирует, останавливает, но не направляет в нужную сторону
     # q_current_rev = vec_rotation.conjugate_quat(orien_quat)
     # q_err = vec_rotation.quaternion_multiply(q_target, q_current_rev)
     # q = q_err[0] * np.array([q_err[1], q_err[2], q_err[3]])
@@ -76,7 +80,7 @@ log_frames = {
     }
 
 # setup simulation parameters
-max_time = 1000 # взял условоно один шаг - 1 минута
+max_time = 2000 # взял условоно один шаг - 1 минута
 time_step = 1
 
 # simulate from 0 to a max time
@@ -88,9 +92,10 @@ for step_count in range(0, max_step ):
     # set a torque
     # torque is calculated with the goal 
     # to achieve 1 degree/second angular rate at the end of the simulation
+
+    current_vector = vec_rotation.loc2global(sight_axis, body_model.orientation.as_quat( scalar_first= True))
     body_model.torque = calculate_control_moment(body_model.angular_velocity, B, target_vector, body_model.orientation.as_quat( scalar_first= True))
     desired_torque = - body_model.angular_velocity + np.cross(current_vector, vec_rotation.global2loc(target_vector, body_model.orientation.as_quat( scalar_first= True)))
-
 
     # calculate a new state
     integrator.update( time_step )
@@ -110,7 +115,7 @@ for step_count in range(0, max_step ):
             "w z":                  body_model.angular_velocity[2] * 180 / math.pi,
             "w":                    scipy.linalg.norm( body_model.angular_velocity * 180 / math.pi ),
             "проекция w на B":      np.dot( body_model.angular_velocity, B_loc ) / ( scipy.linalg.norm(body_model.angular_velocity) * scipy.linalg.norm( B ) ),
-            "angle":                vec_rotation.angle_between_vectors(vec_rotation.global2loc(target_vector, body_model.orientation.as_quat( scalar_first= True)), current_vector),
+            "angle":                vec_rotation.angle_between_vectors(target_vector, current_vector),
             "угол между M и B":     vec_rotation.angle_between_vectors(body_model.torque, B_loc),
             "угол между жел. M и B":vec_rotation.angle_between_vectors(desired_torque, B_loc),
             "целевая орентация":    q_target,
