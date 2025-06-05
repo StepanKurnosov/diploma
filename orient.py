@@ -17,14 +17,12 @@ def make_rand_vector(dims): # создание рандомного единич
 
 
 k_w = 0.1 # коэффициент усиления для w
-k_q = 0.1 # коэффициент усиления для q
+k_q = 0.005 # коэффициент усиления для q
 
 target_vector = make_rand_vector(3)
 current_vector = np.array([1, 0, 0])
 
 def calculate_control_moment(w, B, target_vector, orien_quat): # рассчет управляющего момента
-    # т.к. мы все переводим в систему аппарата, то вектор, который мы направляем в системе координат аппарарта всегда константа
-    current_vector = np.array([1, 0, 0])
 
     # перевод магнитного поля  и целевого вектор в систему аппарата
     B_loc = vec_rotation.global2loc(B, orien_quat) 
@@ -127,14 +125,6 @@ for step_count in range(0, max_step ):
         }
     )
 
-
-
-    # print(  "step:",    step_count, 
-    #         "time:",    integrator.time, 
-    #         "w:",       body_model.angular_velocity * 180 / math.pi, 
-    #         "w_norm",   scipy.linalg.norm( body_model.angular_velocity * 180 / math.pi ),
-    #         "w_on_B_projection", np.dot( body_model.angular_velocity, B ) / ( scipy.linalg.norm( body_model.angular_velocity) * scipy.linalg.norm( B ) ),
-    #         "B: ", B)
  
     
 graphs.display_results( log_frames, [

@@ -21,27 +21,36 @@ target_vector = vec_rotation.loc2global(sight_axis, q_target)
 
 
 
-def calculate_control_moment(w, B, target_vector, orien_quat): # рассчет управляющего момента
+def calculate_control_moment(w, B, orien_quat): # рассчет управляющего момента
 
     # перевод магнитного поля  и целевого вектор в систему аппарата
     B_loc = vec_rotation.global2loc(B, orien_quat)
+    w_glob = vec_rotation.loc2global(w, orien_quat)
+
 
     #Вариант № 1: нелогичный, но рабочий в достаточно общем, но единичном случае
     # ВСЕГДА ориентируеют объект в изначальное положение (1, 0, 0, 0)
-    q = orien_quat[0] * np.array([orien_quat[1], orien_quat[2], orien_quat[3]])
+    # q = orien_quat[0] * np.array([orien_quat[1], orien_quat[2], orien_quat[3]])
 
     #Вариант № 2: логичный, но нерабочий
     # ВСЕГДА стабилизирует, останавливает, но не направляет в нужную сторону
-    # q_current_rev = vec_rotation.conjugate_quat(orien_quat)
-    # q_err = vec_rotation.quaternion_multiply(q_target, q_current_rev)
-    # q = q_err[0] * np.array([q_err[1], q_err[2], q_err[3]])
+    q_current_rev = vec_rotation.conjugate_quat(orien_quat)
+    q_target_rev = vec_rotation.conjugate_quat(q_target)
+    q_err = vec_rotation.quaternion_multiply(q_target_rev, orien_quat)
+    q = q_err[0] * np.array([q_err[1], q_err[2], q_err[3]])
 
     # расчет скользящей поверхности
-    s = w + lam1 * q
+    s = w_glob + lam1 * q
+
+    s_norm = np.linalg.norm(s)
+    if s_norm < 1e-3:  # Порог для "нахождения на поверхности"
+        print("На скользящей поверхности: s ≈ 0", s_norm)
+    else:
+        print("Мы не на скользязей", s_norm)
 
     # расчет магнитного и механического моментов 
-    magnit_moment = - k * np.cross(B_loc, s)
-    control_moment = np.cross(magnit_moment, B_loc)
+    magnit_moment =  - k * np.cross(B, s)
+    control_moment = vec_rotation.global2loc(np.cross(magnit_moment, B), orien_quat)
     return control_moment
 
 
@@ -80,7 +89,7 @@ log_frames = {
     }
 
 # setup simulation parameters
-max_time = 2000 # взял условоно один шаг - 1 минута
+max_time = 4000 # взял условоно один шаг - 1 минута
 time_step = 1
 
 # simulate from 0 to a max time
@@ -94,7 +103,7 @@ for step_count in range(0, max_step ):
     # to achieve 1 degree/second angular rate at the end of the simulation
 
     current_vector = vec_rotation.loc2global(sight_axis, body_model.orientation.as_quat( scalar_first= True))
-    body_model.torque = calculate_control_moment(body_model.angular_velocity, B, target_vector, body_model.orientation.as_quat( scalar_first= True))
+    body_model.torque = calculate_control_moment(body_model.angular_velocity, B, body_model.orientation.as_quat( scalar_first= True))
     desired_torque = - body_model.angular_velocity + np.cross(current_vector, vec_rotation.global2loc(target_vector, body_model.orientation.as_quat( scalar_first= True)))
 
     # calculate a new state
