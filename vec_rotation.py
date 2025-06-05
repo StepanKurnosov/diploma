@@ -26,7 +26,9 @@ def conjugate_quat(quat):
     return result
 
 def angle_between_vectors(vec1, vec2):
-    return np.degrees(math.acos(np.dot(vec1, vec2)/ (np.linalg.norm(vec1)* np.linalg.norm(vec2)))) 
+    cos_theta = np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+    cos_theta = np.clip(cos_theta, -1.0, 1.0)
+    return np.degrees(math.acos(cos_theta)) 
 
 
 def loc2global(init_vector, turn_q):

@@ -11,8 +11,8 @@ import graphs
 import matplotlib
 
 
-lam1 = 0.05
-k = 0.03  # коэффициент слайдинга (усилие затухания)
+lam1 = 0.03
+k = 0.05  # коэффициент слайдинга (усилие затухания)
 
 sight_axis = np.array([1, 0, 0]) # ось спутника, которую хотим направить
 #q_target = np.array([1, 0, 0, 0]) # эксперимент с возвращением спутника в "начальное положение" 
@@ -37,7 +37,7 @@ def calculate_control_moment(w, B, orien_quat): # рассчет управля�
     q_current_rev = vec_rotation.conjugate_quat(orien_quat)
     q_target_rev = vec_rotation.conjugate_quat(q_target)
     q_err = vec_rotation.quaternion_multiply(q_target_rev, orien_quat)
-    q = q_err[0] * np.array([q_err[1], q_err[2], q_err[3]])
+    q = np.array([q_err[1], q_err[2], q_err[3]])
 
     # расчет скользящей поверхности
     s = w_glob + lam1 * q
@@ -89,7 +89,7 @@ log_frames = {
     }
 
 # setup simulation parameters
-max_time = 4000 # взял условоно один шаг - 1 минута
+max_time = 5000 # взял условоно один шаг - 1 минута
 time_step = 1
 
 # simulate from 0 to a max time
