@@ -9,10 +9,11 @@ import csv
 import vec_rotation
 import graphs
 import matplotlib
+import magnit_field
 
 
-lam1 = 0.03
-k = 0.05  # коэффициент слайдинга (усилие затухания)
+lam1 = 0.05
+k = 0.07  # коэффициент слайдинга (усилие затухания)
 
 sight_axis = np.array([1, 0, 0]) # ось спутника, которую хотим направить
 #q_target = np.array([1, 0, 0, 0]) # эксперимент с возвращением спутника в "начальное положение" 
@@ -36,11 +37,11 @@ def calculate_control_moment(w, B, orien_quat): # рассчет управля�
     # ВСЕГДА стабилизирует, останавливает, но не направляет в нужную сторону
     q_current_rev = vec_rotation.conjugate_quat(orien_quat)
     q_target_rev = vec_rotation.conjugate_quat(q_target)
-    q_err = vec_rotation.quaternion_multiply(q_target_rev, orien_quat)
+    q_err = vec_rotation.quaternion_multiply(q_target, q_current_rev)
     q = np.array([q_err[1], q_err[2], q_err[3]])
 
     # расчет скользящей поверхности
-    s = w_glob + lam1 * q
+    s = w_glob - lam1 * q
 
     s_norm = np.linalg.norm(s)
     if s_norm < 1e-3:  # Порог для "нахождения на поверхности"
@@ -49,7 +50,7 @@ def calculate_control_moment(w, B, orien_quat): # рассчет управля�
         print("Мы не на скользязей", s_norm)
 
     # расчет магнитного и механического моментов 
-    magnit_moment =  - k * np.cross(B, s)
+    magnit_moment = - k * np.cross(B, s)
     control_moment = vec_rotation.global2loc(np.cross(magnit_moment, B), orien_quat)
     return control_moment
 
@@ -89,7 +90,7 @@ log_frames = {
     }
 
 # setup simulation parameters
-max_time = 5000 # взял условоно один шаг - 1 минута
+max_time = 20000 # взял условоно один шаг - 1 минута
 time_step = 1
 
 # simulate from 0 to a max time
@@ -104,6 +105,10 @@ for step_count in range(0, max_step ):
 
     current_vector = vec_rotation.loc2global(sight_axis, body_model.orientation.as_quat( scalar_first= True))
     body_model.torque = calculate_control_moment(body_model.angular_velocity, B, body_model.orientation.as_quat( scalar_first= True))
+    q_target_rev = vec_rotation.conjugate_quat(q_target)
+    q_err = vec_rotation.quaternion_multiply(q_target_rev, body_model.orientation.as_quat( scalar_first= True))
+    q = np.array([q_err[1], q_err[2], q_err[3]])
+
     desired_torque = - body_model.angular_velocity + np.cross(current_vector, vec_rotation.global2loc(target_vector, body_model.orientation.as_quat( scalar_first= True)))
 
     # calculate a new state
@@ -127,8 +132,9 @@ for step_count in range(0, max_step ):
             "angle":                vec_rotation.angle_between_vectors(target_vector, current_vector),
             "угол между M и B":     vec_rotation.angle_between_vectors(body_model.torque, B_loc),
             "угол между жел. M и B":vec_rotation.angle_between_vectors(desired_torque, B_loc),
-            "целевая орентация":    q_target,
+            "ошибка ориентации":    q_err,
             "текущая ориентация":   body_model.orientation.as_quat( scalar_first= True)
+            
         }
     )
 
@@ -159,12 +165,12 @@ graphs.display_results( log_frames, [
                 ]
         },
         {
-            "subplot_title":"Проекция угловой скорости на B",
-            "y_label": "Проекция w на B",
+            "subplot_title":"ошибка ориентации",
+            "y_label": "ошибка ориентации",
             "lines":
                 [
                     # lines
-                    "проекция w на B"
+                    "ошибка ориентации"
                 ]
         }
     ],
@@ -209,7 +215,7 @@ graphs.display_results( log_frames, [
             "lines":
                 [
                     # lines
-                    "целевая орентация"
+                    "ошибка ориентации"
                 ]
         },
         {
