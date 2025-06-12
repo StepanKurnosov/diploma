@@ -12,19 +12,8 @@ import matplotlib
 import magnit_field
 
 
-<<<<<<< .mine
-<<<<<<< HEAD
 lam1 = 0.01
 k = 0.05  # коэффициент слайдинга (усилие затухания)
-=======
-lam1 = 0.05
-k = 1  # коэффициент слайдинга (усилие затухания)
-r = 0.5
->>>>>>> .theirs
-
-=======
-
->>>>>>> abedd481a64923962dd71ae7c43423b4b36ad8a4
 
 sight_axis = np.array([1, 0, 0]) # ось спутника, которую хотим направить
 q_target = np.array([1, 0, 0, 0]) # эксперимент с возвращением спутника в "начальное положение" 
@@ -63,7 +52,7 @@ def calculate_control_moment(w, B, orien_quat): # рассчет управля�
     
 
     print("Ошибка угла: ", q_err[0])
-    s = w - lam1 * q
+    s = w_glob - lam1 * q
 
     # расчет скользящей поверхности
    
@@ -74,7 +63,8 @@ def calculate_control_moment(w, B, orien_quat): # рассчет управля�
     else:
         print("Мы не на скользязей", s_norm)
     # расчет магнитного и механического моментов 
-    magnit_moment = - k * np.cross(B_loc, s)
+
+    magnit_moment = - k * np.cross(B_loc,  vec_rotation.global2loc(s, orien_quat))
     control_moment = np.cross(magnit_moment, B_loc)
     return control_moment
 
@@ -114,38 +104,15 @@ log_frames = {
     }
 
 # setup simulation parameters
-<<<<<<< .mine
-<<<<<<< HEAD
 max_time = 2400 # взял условоно один шаг - 1 минута
-=======
-max_time = 2000 # взял условоно один шаг - 1 минута
->>>>>>> abedd481a64923962dd71ae7c43423b4b36ad8a4
-=======
-max_time = 2000 # взял условоно один шаг - 1 минута
-
-
-
-
->>>>>>> .theirs
 time_step = 1
 
 # simulate from 0 to a max time
 max_step = round( max_time / time_step )
 for step_count in range(0, max_step ):
     alpha = step_count * 2 * math.pi / 120
-<<<<<<< .mine
-<<<<<<< HEAD
     #B = magnit_field.calculete_B_in_decard(r, alpha)
     B = np.array([math.sin(alpha), 0, math.cos(alpha)]) # с учетом того, что 1 шаг - 1 минута, один оборот КА сделает за 120 шагов
-=======
-    B = magnit_field.calculete_B_in_decard(r, alpha)
-    #B = np.array([math.sin(alpha), 0, math.cos(alpha)]) # с учетом того, что 1 шаг - 1 минута, один оборот КА сделает за 120 шагов
-
->>>>>>> .theirs
-=======
-    B = magnit_field.calculete_B_in_decard(r, alpha)
-    #B = np.array([math.sin(alpha), 0, math.cos(alpha)]) # с учетом того, что 1 шаг - 1 минута, один оборот КА сделает за 120 шагов
->>>>>>> abedd481a64923962dd71ae7c43423b4b36ad8a4
     B_loc = vec_rotation.global2loc(B, body_model.orientation.as_quat( scalar_first= True))
     # set a torque
     # torque is calculated with the goal 
