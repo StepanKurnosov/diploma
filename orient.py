@@ -85,7 +85,7 @@ log_frames = {
 target_vector = make_rand_vector(3)
 sight_axis = make_rand_vector(3)
 # setup simulation parameters
-max_time = 2000 # взял условоно один шаг - 1 минута
+max_time = 2400 # взял условоно один шаг - 1 минута
 time_step = 1
 
 # simulate from 0 to a max time
@@ -119,7 +119,7 @@ for step_count in range(0, max_step ):
             "w z":                  body_model.angular_velocity[2] * 180 / math.pi,
             "w":                    scipy.linalg.norm( body_model.angular_velocity * 180 / math.pi ),
             "проекция w на B":      np.dot( body_model.angular_velocity, B_loc ) / ( scipy.linalg.norm(body_model.angular_velocity) * scipy.linalg.norm( B ) ),
-            "angle":                vec_rotation.angle_between_vectors(target_vector, orient_vector),
+            "угол между current и target":                vec_rotation.angle_between_vectors(target_vector, orient_vector),
             "угол между M и B":     vec_rotation.angle_between_vectors(body_model.torque, B_loc),
             "угол между жел. M и B":vec_rotation.angle_between_vectors(desired_torque, B_loc)
         }
@@ -133,7 +133,7 @@ graphs.display_results( log_frames, [
         # subplots
         {
             "subplot_title":"Угловая скорость",
-            "y_label": "Градусы / с",
+            "y_label": "Градусы °/ с",
             "lines":
                 [
                     # lines
@@ -142,26 +142,17 @@ graphs.display_results( log_frames, [
                     "w z",
                     "w"
                 ]
-        },
-        {
-            "subplot_title":"Проекция угловой скорости на B",
-            "y_label": "Проекция w на B",
-            "lines":
-                [
-                    # lines
-                    "проекция w на B"
-                ]
         }
     ],
     [
         # subplots
         {
             "subplot_title":"Угол отклонения от целевого вектора",
-            "y_label": "Градусы",
+            "y_label": "Градусы °",
             "lines":
                 [
                     # lines
-                    "angle"
+                    "угол между current и target"
                 ]
         }
     ],
@@ -169,7 +160,7 @@ graphs.display_results( log_frames, [
         # subplots
         {
             "subplot_title":"Угол расхождения управляющего момента и B",
-            "y_label": "Градусы",
+            "y_label": "Градусы ",
             "lines":
                 [
                     # lines

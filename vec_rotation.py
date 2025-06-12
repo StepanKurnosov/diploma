@@ -45,8 +45,9 @@ def global2loc(init_vector, turn_q):
     final_vector = np.array([final_quat[1], final_quat[2], final_quat[3]])
     return final_vector
 
-# vec_y = np.array([0, 1, 0])
-# vec_y = np.array([0, 1, 0])
+vec_2 = np.array([1, 0, 0, 0])
+vec_1 = np.array([0.7071, 0.7071, 0, 0])
+print(quaternion_multiply(vec_1, vec_2))
 # # проверка функций вращения
 # vec_x = np.array([1, 0, 0])
 # vec_y = np.array([0, 1, 0])

@@ -23,6 +23,8 @@ def display_results( data_logged, plot_structure ):
 
     for figures in plot_structure:    
         fig = plt.figure(layout='constrained')
+        plt.rcParams['font.family'] = 'Times New Roman'
+        plt.rcParams['font.size'] = 14
         for subplot_index in range( 0, len( figures ) ):
             ax = fig.add_subplot( len( figures ) , 1, subplot_index + 1 )
             # lines on 
@@ -47,7 +49,7 @@ def display_results( data_logged, plot_structure ):
 
             ax.set_title( figures[ subplot_index ]["subplot_title"] )
             ax.set_xlim(0, t[-1] + 1 )
-            ax.set_xlabel('Время, с')
+            ax.set_xlabel('Время, мин')
             ax.set_ylabel( figures[ subplot_index ]["y_label"])
             ax.grid(True)
             plt.legend()
